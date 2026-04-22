@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Koordinatensystem Spiel</title>
+  <style>
+    body { font-family: Arial; text-align: center; }
+    canvas { border: 1px solid black; margin-top: 10px; cursor: crosshair; }
+    #info { margin-top: 10px; }
+    button { margin: 5px; padding: 8px 12px; }
+  </style>
+</head>
+<body>
+  <h1>Koordinatensystem Spiel</h1>
+  <p>Klicke genau auf den Punkt!</p>
+
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+  <div id="info">
+    <p id="target"></p>
+    <p id="score">Punkte: 0</p>
+    <p id="timer">Zeit: 02:00</p>
+
+    <button onclick="toggleSolution()">Lösung anzeigen / nächste Aufgabe</button>
+    <button onclick="resetTimer()">Timer Reset</button>
+    <button onclick="resetScore()">Punkte Reset</button>
+
+    <div style="font-size:10px; margin-top:5px; color:gray;">
+      PROGRAMIERT VON MURAT SIRIN
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    let score = 0;
+    let timeLeft = 120;
+    let targetX, targetY;
+    let solutionVisible = false;
+    let interval;
+    let gameActive = true;
+
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#ccc";
+
+      for (let i = 0; i <= 400; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, 400);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(400, i);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = "black";
+      ctx.beginPath();
+      ctx.moveTo(200, 0);
+      ctx.lineTo(200, 400);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0, 200);
+      ctx.lineTo(400, 200);
+      ctx.stroke();
+    }
+
+    function drawPoint(x, y, color = "red") {
+      const px = 200 + x * 40;
+      const py = 200 - y * 40;
+
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(px, py, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function newTarget() {
+      drawGrid();
+
+      targetX = Math.floor(Math.random() * 9) - 4;
+      targetY = Math.floor(Math.random() * 9) - 4;
+
+      document.getElementById("target").innerText = `Ziel: (${targetX}, ${targetY})`;
+
+      solutionVisible = false;
+    }
+
+    function toggleSolution() {
+      if (!solutionVisible) {
+        drawGrid();
+        drawPoint(targetX, targetY, "blue");
+        solutionVisible = true;
+      } else {
+        newTarget();
+      }
+    }
+
+    canvas.addEventListener("click", function(e) {
+      if (!gameActive || solutionVisible) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const gridX = Math.round((x - 200) / 40);
+      const gridY = -Math.round((y - 200) / 40);
+
+      if (gridX === targetX && gridY === targetY) {
+        score++;
+        document.getElementById("score").innerText = "Punkte: " + score;
+
+        drawGrid();
+        drawPoint(targetX, targetY, "green");
+
+        setTimeout(newTarget, 600);
+      } else {
+        score--;
+        document.getElementById("score").innerText = "Punkte: " + score;
+      }
+    });
+
+    function formatTime(seconds) {
+      let min = Math.floor(seconds / 60);
+      let sec = seconds % 60;
+      return `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    }
+
+    function startTimer() {
+      gameActive = true;
+      interval = setInterval(() => {
+        timeLeft--;
+        document.getElementById("timer").innerText = "Zeit: " + formatTime(timeLeft);
+
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          gameActive = false;
+          alert("Zeit vorbei! Deine Punkte: " + score);
+        }
+      }, 1000);
+    }
+
+    function resetTimer() {
+      clearInterval(interval);
+      timeLeft = 120;
+      document.getElementById("timer").innerText = "Zeit: " + formatTime(timeLeft);
+      startTimer();
+    }
+
+    function resetScore() {
+      score = 0;
+      document.getElementById("score").innerText = "Punkte: " + score;
+    }
+
+    drawGrid();
+    newTarget();
+    startTimer();
+  </script>
+</body>
+</html>
